@@ -1,0 +1,185 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - Centre Informatique</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 100vw;
+            max-width: 450px;
+        }
+        h3 {
+            color: #106eea;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #106eea;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0d5bba;
+        }
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <img src="{% static 'img/logo_CI.gif' %}" alt="LogoCentreInformatique" style="width: 90px; height: 60px;margin-left: 70px;">
+            <h3 style="float: right;margin-right: 60px;color: #106eea;">CENTRE INFORMATIQUE</h3>
+        </div>
+        <h1 style="text-align: center;">S'inscrire</h1>
+        
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <form method="post" id="signupForm">
+            {% csrf_token %}
+            
+            <div>
+                <label for="id_matricule">Matricule :</label>
+                <input type="number" id="id_matricule" name="matricule" required>
+                {% if form.matricule.errors %}
+                    <div class="error">{{ form.matricule.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="id_username">Nom d'utilisateur :</label>
+                <input type="text" id="id_username" name="username" required>
+                {% if form.username.errors %}
+                    <div class="error">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="id_email">Email :</label>
+                <input type="email" id="id_email" name="email" required>
+                {% if form.email.errors %}
+                    <div class="error">{{ form.email.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="id_role">Rôle :</label>
+                <select id="id_role" name="role" required>
+                    <option value="etudiant">Étudiant</option>
+                    <option value="enseignant">Enseignant</option>
+                    <option value="personnel">Personnel Administratif</option>
+                </select>
+                {% if form.role.errors %}
+                    <div class="error">{{ form.role.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="id_password1">Mot de passe :</label>
+                <input type="password" id="id_password1" name="password1" required>
+                {% if form.password1.errors %}
+                    <div class="error">{{ form.password1.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div>
+                <label for="id_password2">Confirmer mot de passe :</label>
+                <input type="password" id="id_password2" name="password2" required>
+                {% if form.password2.errors %}
+                    <div class="error">{{ form.password2.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <button type="submit">S'inscrire</button>
+        </form>
+        
+        <p class="login-link">Déjà un compte ? <a href="{% url 'signin' %}" style="color: #106eea;">Connectez-vous ici</a></p>
+    </div>
+
+    <script>
+        // Vérification côté client que les mots de passe correspondent
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const password1 = document.getElementById('id_password1').value;
+            const password2 = document.getElementById('id_password2').value;
+            
+            if (password1 !== password2) {
+                e.preventDefault();
+                alert('Les mots de passe ne correspondent pas');
+            }
+        });
+
+        // Vérification asynchrone du matricule
+        document.getElementById('id_matricule').addEventListener('blur', function() {
+            const matricule = this.value;
+            if (matricule) {
+                fetch(`/api/check-matricule/?matricule=${matricule}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            alert('Ce matricule est déjà enregistré');
+                        }
+                    });
+            }
+        });
+    </script>
+</body>
+</html>

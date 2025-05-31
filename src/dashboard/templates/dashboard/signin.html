@@ -1,0 +1,134 @@
+<!-- templates/dashboard/signin.html -->
+<!DOCTYPE html>
+<html lang="fr">
+{% load static %}
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Connexion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 25px;
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .signup-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #555;
+        }
+        .signup-link a {
+            color: #007bff;
+        }
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+        .messages {
+            color: red;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <img src="{% static 'img/logo_CI.gif' %}" alt="LogoCentreInformatique" style="width: 70px; height: 60px;margin-left: 60px;">
+            <h3 style="float: right;margin-right: 40px;color: #106eea;">CENTRE INFORMATIQUE</h3>
+        </div>
+        <h1 style="text-align: center;">Connexion</h1>
+        
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <form method="POST" action="{% url 'signin' %}">
+            {% csrf_token %}
+            
+            <div>
+                <label>Matricule:</label>
+                <input type="number" name="matricule" required>
+            </div>
+            
+            <div>
+                <label>Mot de passe:</label>
+                <input type="password" name="password" required>
+            </div>
+            
+            <button type="submit">Se connecter</button>
+        </form>
+        
+        <!-- <p class="signup-link">Pas encore inscrit ? <a href="{% url 'signup' %}">Créez un compte</a></p> -->
+        <div class="signup-link">
+            <a  href="{% url 'index' %}">Retour à l'accueil</a>
+        </div>
+        
+    </div>
+    <script>
+            function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+{% load static %}
+
+<head>
+    <meta charset="utf-8">
+    <title>Archive Centre Informatique</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="" name="keywords">
+    <meta content="" name="description">
+
+    <!-- Favicon -->
+    <link  href="{% static 'img/logo_CI.gif' %}" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icon Font Stylesheet -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="{% static 'lib/owlcarousel/assets/owl.carousel.min.css' %}" rel="stylesheet">
+    <link href="{% static 'lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css' %}" rel="stylesheet" />
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-xxl position-relative bg-white d-flex p-0">
+        <!-- Sidebar Start -->
+        <div class="sidebar pe-4 pb-3">
+            <nav class="navbar bg-light navbar-light">
+                <a href="#" class="navbar-brand mx-4 mb-3">
+                    <div>
+                        <img src="{% static 'img/logo_CI.png' %}" rel="icon" style="width: 70px; height: 60px; margin-left: -10px;">
+                        <h6 class="text-primary" style="font-size: small;float: right;margin-top: -34px; margin-right: -27px;">CENTRE INFORMATIQUE</h6>
+                    </div>
+                </a>
+                
+                <!-- Profile Badge -->
+                <div class="d-flex align-items-center ms-4 mb-4">
+                    <div class="position-relative">
+                        <div id="profileInitial" class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; cursor: pointer;">
+                            <span class="text-white fw-bold">{{ user.username|first|upper }}</span>
+                        </div>
+                        <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">{{ user.username }}</h6>
+                        <span>Enseignant</span>
+                    </div>
+                </div>
+                
+                <div class="navbar-nav w-100">
+                    <a href="#" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
+                    
+                    <a href="{% url 'signin' %}" class="nav-link " data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Se connecter</a>
+                    <a href="{% url 'index' %}" class="nav-link " data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Accueil</a>
+                    
+                </div>
+            </nav>
+        </div>
+        <!-- Sidebar End -->
+
+        <!-- Content Start -->
+        <div class="content">
+            <!-- Header -->
+            <div class="container-fluid pt-4 px-4">
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="bg-light rounded p-4">
+                            <h1 class="mb-4">Bienvenue, <span class="badge bg-success">{{ user.username }}</span></h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="container-fluid pt-4 px-4">
+                <div class="row g-4">
+                    <div class="col-sm-6 col-xl-4">
+                        <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
+                            <i class="fa fa-book fa-3x text-primary"></i>
+                            <div class="ms-3">
+                                <p class="mb-2">Mes cours</p>
+                                <h6 class="mb-0">{{ cours|length }}</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-4">
+                        <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
+                            <i class="fa fa-file-alt fa-3x text-primary"></i>
+                            <div class="ms-3">
+                                <p class="mb-2">Projets étudiants</p>
+                                <h6 class="mb-0">{{ stats.nb_projets }}</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-4">
+                        <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
+                            <i class="fa fa-eye fa-3x text-primary"></i>
+                            <div class="ms-3">
+                                <p class="mb-2">Consultations</p>
+                                <h6 class="mb-0">{{ stats.nb_projets_consultes }}</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Course Form -->
+            <div class="container-fluid pt-4 px-4">
+                <div class="bg-light rounded p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h2 class="mb-0">Ajouter un nouveau cours</h2>
+                    </div>
+                    <form method="post" enctype="multipart/form-data" class="row g-3">
+                        {% csrf_token %}
+                        <div class="col-12">
+                            {{ form.as_p }}
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-success">Publier le cours</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Courses Sections -->
+            <div class="container-fluid pt-4 px-4">
+                <div class="row g-4">
+                    <!-- My Courses -->
+                    <div class="col-sm-12 col-xl-6">
+                        <div class="bg-light rounded p-4 h-100">
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h2 class="mb-0">Mes cours archivés</h2>
+                                <div class="search-bar">
+                                    <form class="d-flex" id="searchCourseForm">
+                                        <input class="form-control me-2" type="search" placeholder="Rechercher un cours..." aria-label="Search" id="courseSearchInput">
+                                        <button class="btn btn-outline-primary" type="submit">
+                                            <i class="fa fa-search"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% if cours %}
+                            <div class="table-responsive">
+                                <table class="table" id="coursesTable">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Titre</th>
+                                            <th scope="col">Date</th>
+                                            <th scope="col">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for cours_item in cours %}
+                                        <tr class="course-row">
+                                            <td><strong>{{ cours_item.titre }}</strong></td>
+                                            <td>{{ cours_item.date_ajout|date:"d/m/Y" }}</td>
+                                            <td>
+                                                <a href="{{ cours_item.fichier.url }}" download="{{ cours_item.titre }}" class="btn btn-sm btn-outline-primary">Télécharger</a>
+                                                <a href="{% url 'modifier_cours' cours_item.id %}" class="btn btn-sm btn-outline-warning">Modifier</a>
+                                                <a href="{% url 'supprimer_cours' cours_item.id %}" class="btn btn-sm btn-outline-danger">Supprimer</a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">Vous n'avez pas encore ajouté de cours.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Students Projects -->
+                    <div class="col-sm-12 col-xl-6">
+                        <div class="bg-light rounded p-4 h-100">
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h2 class="mb-0">Projets des étudiants</h2>
+                                <div class="search-bar">
+                                    <form class="d-flex" id="searchProjectForm">
+                                        <input class="form-control me-2" type="search" placeholder="Rechercher un projet..." aria-label="Search" id="projectSearchInput">
+                                        <button class="btn btn-outline-primary" type="submit">
+                                            <i class="fa fa-search"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% if projets_etudiants %}
+                            <div class="table-responsive">
+                                <table class="table" id="projectsTable">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Titre</th>
+                                            <th scope="col">Étudiant</th>
+                                            <th scope="col">Date</th>
+                                            <th scope="col">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for projet in projets_etudiants %}
+                                        <tr class="project-row">
+                                            <td><strong>{{ projet.titre }}</strong></td>
+                                            <td>{{ projet.auteur.get_full_name }}</td>
+                                            <td>{{ projet.date_ajout|date:"d/m/Y" }}</td>
+                                            <td>
+                                                <a href="{{ projet.fichier.url }}" download="{{ projet.titre }}" class="btn btn-sm btn-outline-primary">Télécharger</a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">Aucun projet étudiant disponible pour le moment.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Content End -->
+
+        <!-- Profile Popup -->
+        <div id="profilePopup" class="position-absolute" style="display: none; z-index: 1000; left: 80px; top: 120px;">
+            <div class="bg-light rounded shadow p-4" style="width: 300px;">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="rounded-circle bg-success d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
+                        <span class="text-white fw-bold fs-4">{{ user.username|first|upper }}</span>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">{{ user.username }}</h5>
+                        <span class="text-muted">Enseignant</span>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <p><strong>Email :</strong> {{ user.email }}</p>
+                    <p><strong>Statut :</strong> Actif</p>
+                    <p><strong>Cours publiés :</strong> {{ cours|length }}</p>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a href="#" class="btn btn-sm btn-outline-primary">Modifier profil</a>
+                    <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger">Déconnexion</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Top -->
+        <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+    </div>
+
+    <!-- JavaScript for Profile Popup and Search -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Profile Popup
+            const profileInitial = document.getElementById('profileInitial');
+            const profilePopup = document.getElementById('profilePopup');
+            
+            profileInitial.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (profilePopup.style.display === 'none' || profilePopup.style.display === '') {
+                    profilePopup.style.display = 'block';
+                } else {
+                    profilePopup.style.display = 'none';
+                }
+            });
+            
+            // Close popup when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!profileInitial.contains(event.target) && !profilePopup.contains(event.target)) {
+                    profilePopup.style.display = 'none';
+                }
+            });
+
+            // Course Search Functionality
+            document.getElementById('searchCourseForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const searchTerm = document.getElementById('courseSearchInput').value.toLowerCase();
+                const rows = document.querySelectorAll('#coursesTable .course-row');
+                
+                rows.forEach(row => {
+                    const title = row.querySelector('td:first-child strong').textContent.toLowerCase();
+                    if (title.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+
+            // Project Search Functionality
+            document.getElementById('searchProjectForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const searchTerm = document.getElementById('projectSearchInput').value.toLowerCase();
+                const rows = document.querySelectorAll('#projectsTable .project-row');
+                
+                rows.forEach(row => {
+                    const title = row.querySelector('td:first-child strong').textContent.toLowerCase();
+                    if (title.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+
+            // Live search for courses
+            document.getElementById('courseSearchInput').addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#coursesTable .course-row');
+                
+                rows.forEach(row => {
+                    const title = row.querySelector('td:first-child strong').textContent.toLowerCase();
+                    if (title.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+
+            // Live search for projects
+            document.getElementById('projectSearchInput').addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#projectsTable .project-row');
+                
+                rows.forEach(row => {
+                    const title = row.querySelector('td:first-child strong').textContent.toLowerCase();
+                    if (title.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- JavaScript Libraries - DÉPLACÉ EN FIN DE BODY -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'lib/chart/chart.min.js' %}"></script>
+    <script src="{% static 'lib/easing/easing.min.js' %}"></script>
+    <script src="{% static 'lib/waypoints/waypoints.min.js' %}"></script>
+    <script src="{% static 'lib/owlcarousel/owl.carousel.min.js' %}"></script>
+    <script src="{% static 'lib/tempusdominus/js/moment.min.js' %}"></script>
+    <script src="{% static 'lib/tempusdominus/js/moment-timezone.min.js' %}"></script>
+    <script src="{% static 'lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js' %}"></script>
+
+    <!-- Template Javascript -->
+    <script src="{% static 'js/main.js' %}" defer></script>
+</body>
+
+</html>
