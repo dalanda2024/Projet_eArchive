@@ -21,10 +21,11 @@ urlpatterns = [
 
     # Scanner
     path('scanner/', views.scanner_document, name='scanner_document'),
-    path('scanner/projet/<int:scan_id>/', views.traiter_scan_projet, name='traiter_scan_projet'),
-    path('scanner/cours/<int:scan_id>/', views.traiter_scan_cours, name='traiter_scan_cours'),
-    path('scanner/document/<int:scan_id>/', views.traiter_scan_document, name='traiter_scan_document'),
-    path('api/upload_scan/', views.upload_scan_api, name='upload_scan_api'),
+    path('scanner/traiter/', views.traiter_scan, name='traiter_scan'),
+    path('scanner/projet/<int:scan_id>/', views.completer_scan_projet, name='completer_scan_projet'),
+    path('scanner/cours/<int:scan_id>/', views.completer_scan_cours, name='completer_scan_cours'),
+    path('scanner/document/<int:scan_id>/', views.completer_scan_document, name='completer_scan_document'),
+
 
     # Projets étudiants
     path('projet/modifier_projet/<int:projet_id>/', views.modifier_projet, name='modifier_projet'),

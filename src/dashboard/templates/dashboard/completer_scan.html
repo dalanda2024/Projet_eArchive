@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compléter le scan</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #009CFF;
+            --primary-hover: #007acc;
+            --secondary-color: #6c757d;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+
+        .col-md-8 {
+            flex: 0 0 calc(66.666% - 30px);
+            max-width: calc(66.666% - 30px);
+        }
+
+        .col-md-4 {
+            flex: 0 0 calc(33.333% - 30px);
+            max-width: calc(33.333% - 30px);
+        }
+
+        form {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 156, 255, 0.2);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            border-radius: var(--border-radius);
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 16px;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .scan-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .page-preview {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 5px;
+            background: white;
+        }
+
+        .scan-preview img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .text-muted {
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            display: block;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .page-number-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+
+        .page-container {
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .col-md-8, .col-md-4 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            form, .card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Compléter le document scanné</h2>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Champ caché pour le type de document -->
+                    <input type="hidden" name="type_document" value="{{ type_document }}">
+                    
+                    <div class="form-group">
+                        <label for="id_titre">Titre du document</label>
+                        <input type="text" name="titre" id="id_titre" required 
+                               value="Document scanné - {{ scan.date_scan|date:'d/m/Y' }}">
+                    </div>
+                    
+                    {% if type_document == 'projet' %}
+                    <div class="form-group">
+                        <label for="id_type_projet">Type de projet</label>
+                        <select name="type_projet" id="id_type_projet" class="form-control" required>
+                            <option value="pfe">Projet de Fin d'Études</option>
+                            <option value="memoire">Mémoire</option>
+                            <option value="these">Thèse</option>
+                            <option value="rapport">Rapport de Stage</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="form-group">
+                        <label for="id_description">Description</label>
+                        <textarea name="description" id="id_description" rows="4" class="form-control">Document scanné et converti en format numérique</textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Enregistrer le document
+                    </button>
+                </form>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        Aperçu du scan ({{ pages.count }} page{{ pages.count|pluralize }})
+                    </div>
+                    <div class="card-body">
+                        <div class="scan-preview">
+                            {% for page in pages %}
+                            <div class="page-container">
+                                <span class="page-number-badge">{{ page.numero_page }}</span>
+                                <div class="page-preview">
+                                    <img src="{{ page.fichier_page.url }}" alt="Page {{ page.numero_page }}">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

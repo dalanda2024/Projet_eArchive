@@ -1,40 +1,272 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner</title>
+    <title>Scanner un document</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #009CFF;
+            --primary-hover: #007acc;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --light-bg: #f8f9fa;
+            --dark-bg: #343a40;
+            --white: #ffffff;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h2, h4, h5 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .col-md-8 {
+            flex: 0 0 calc(66.666% - 20px);
+            max-width: calc(66.666% - 20px);
+        }
+
+        .col-md-4 {
+            flex: 0 0 calc(33.333% - 20px);
+            max-width: calc(33.333% - 20px);
+        }
+
+        #scanner-container {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #scanner-video {
+            width: 100%;
+            max-height: 60vh;
+            background-color: #000;
+            border-radius: var(--border-radius);
+            display: block;
+            margin: 0 auto;
+        }
+
+        #scanner-canvas {
+            display: none;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: var(--white);
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        #preview-container {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        #pages-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .page-preview {
+            position: relative;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .page-preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .page-number {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            text-align: center;
+            padding: 3px 0;
+            font-size: 0.8rem;
+        }
+
+        .card {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            height: 100%;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-title {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        ol {
+            padding-left: 20px;
+        }
+
+        ol li {
+            margin-bottom: 10px;
+        }
+
+        #scan-form {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .col-md-8, .col-md-4 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            #scanner-container, #preview-container, .card-body {
+                padding: 15px;
+            }
+            
+            #pages-preview {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
 </head>
 <body>
-
     <div class="container">
-        <h2>Scanner un Document</h2>
+        <h2>Scanner un document {{ type_document }}</h2>
         
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Utiliser la caméra</h5>
-                        <div id="camera-preview" class="mb-3" style="border: 1px solid #ddd; height: 300px;"></div>
-                        <button id="capture-btn" class="btn btn-primary" disabled>Capturer</button>
-                        <button id="start-camera" class="btn btn-secondary">Démarrer la caméra</button>
+        <div class="row">
+            <div class="col-md-8">
+                <div id="scanner-container">
+                    <video id="scanner-video" autoplay playsinline></video>
+                    <canvas id="scanner-canvas"></canvas>
+                    
+                    <div class="btn-group">
+                        <button id="capture-btn" class="btn btn-primary">
+                            <i class="fas fa-camera"></i> Capturer la page
+                        </button>
+                        <button id="reset-btn" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i> Recommencer
+                        </button>
                     </div>
+                </div>
+                
+                <div id="preview-container" style="display:none;">
+                    <h4>Aperçu des pages scannées</h4>
+                    <div id="pages-preview"></div>
+                    
+                    <form id="scan-form" method="post" action="{% url 'traiter_scan' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="scan_data" id="scan-data">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check"></i> Valider le scan
+                        </button>
+                    </form>
                 </div>
             </div>
             
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Prévisualisation</h5>
-                        <canvas id="canvas" style="display: none;"></canvas>
-                        <img id="preview" src="#" alt="Preview" style="max-width: 100%; display: none;">
-                        
-                        <form method="post" id="scan-form" enctype="multipart/form-data" class="mt-3">
-                            {% csrf_token %}
-                            {{ form.as_p }}
-                            <input type="hidden" id="image-data" name="image-data">
-                            <button type="submit" class="btn btn-success">Envoyer le scan</button>
-                        </form>
+                        <h5 class="card-title">Instructions</h5>
+                        <ol>
+                            <li>Placez le document devant la caméra</li>
+                            <li>Cliquez sur "Capturer la page"</li>
+                            <li>Répétez pour chaque page</li>
+                            <li>Validez lorsque toutes les pages sont capturées</li>
+                        </ol>
                     </div>
                 </div>
             </div>
@@ -42,99 +274,105 @@
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const video = document.createElement('video');
-        const startCameraBtn = document.getElementById('start-camera');
-        const captureBtn = document.getElementById('capture-btn');
-        const canvas = document.getElementById('canvas');
-        const preview = document.getElementById('preview');
-        const imageData = document.getElementById('image-data');
-        const cameraPreview = document.getElementById('camera-preview');
-        const scanForm = document.getElementById('scan-form');
-        const typeDocumentSelect = document.getElementById('id_type_document');
-        
-        let stream = null;
-        
-        startCameraBtn.addEventListener('click', async function() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                video.srcObject = stream;
-                video.play();
-                cameraPreview.appendChild(video);
-                startCameraBtn.disabled = true;
-                captureBtn.disabled = false;
-            } catch (err) {
-                console.error("Erreur d'accès à la caméra:", err);
-                alert("Impossible d'accéder à la caméra. Veuillez vérifier les permissions.");
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('scanner-video');
+            const canvas = document.getElementById('scanner-canvas');
+            const captureBtn = document.getElementById('capture-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const previewContainer = document.getElementById('preview-container');
+            const pagesPreview = document.getElementById('pages-preview');
+            const scanForm = document.getElementById('scan-form');
+            const scanData = document.getElementById('scan-data');
+            
+            let stream = null;
+            let capturedPages = [];
+            
+            // Démarrer la caméra
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                }).then(function(mediaStream) {
+                    stream = mediaStream;
+                    video.srcObject = stream;
+                }).catch(function(error) {
+                    console.error("Erreur d'accès à la caméra:", error);
+                    alert("Impossible d'accéder à la caméra. Veuillez vérifier les permissions.");
+                });
             }
-        });
-        
-        captureBtn.addEventListener('click', function() {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            const image = canvas.toDataURL('image/jpeg');
-            preview.src = image;
-            preview.style.display = 'block';
-            imageData.value = image;
+            // Capturer une image
+            captureBtn.addEventListener('click', function() {
+                if (!stream) return;
+                
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                capturedPages.push(imageData);
+                updatePreview();
+                
+                // Afficher le conteneur d'aperçu
+                previewContainer.style.display = 'block';
+            });
             
-            // Arrêter la caméra après capture
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+            // Réinitialiser le scan
+            resetBtn.addEventListener('click', function() {
+                capturedPages = [];
+                pagesPreview.innerHTML = '';
+                previewContainer.style.display = 'none';
+            });
+            
+            // Mettre à jour l'aperçu des pages
+            function updatePreview() {
+                pagesPreview.innerHTML = '';
+                capturedPages.forEach((page, index) => {
+                    const pageElement = document.createElement('div');
+                    pageElement.className = 'page-preview';
+                    
+                    const img = document.createElement('img');
+                    img.src = page;
+                    
+                    const pageNumber = document.createElement('div');
+                    pageNumber.className = 'page-number';
+                    pageNumber.textContent = `Page ${index + 1}`;
+                    
+                    pageElement.appendChild(img);
+                    pageElement.appendChild(pageNumber);
+                    pagesPreview.appendChild(pageElement);
+                });
             }
-        });
-        
-        // Envoi via AJAX
-        scanForm.addEventListener('submit', function(e) {
-            e.preventDefault();
             
-            const formData = new FormData();
-            formData.append('type_document', typeDocumentSelect.value);
-            
-            if (imageData.value) {
-                // Si capture depuis caméra
-                const imageBlob = dataURLtoBlob(imageData.value);
-                formData.append('scan', imageBlob, 'scan.jpg');
-            } else {
-                // Si upload de fichier
-                const fileInput = document.querySelector('input[type="file"]');
-                if (fileInput.files.length > 0) {
-                    formData.append('scan', fileInput.files[0]);
+            // Soumettre le formulaire
+            scanForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (capturedPages.length === 0) {
+                    alert('Veuillez capturer au moins une page avant de soumettre.');
+                    return;
                 }
-            }
+                
+                const scanDataObj = {
+                    pages: capturedPages,
+                    timestamp: new Date().toISOString()
+                };
+                
+                scanData.value = JSON.stringify(scanDataObj);
+                this.submit();
+            });
             
-            fetch("{% url 'upload_scan_api' %}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    window.location.href = data.redirect_url;
-                } else {
-                    alert("Erreur lors de l'envoi du scan");
+            // Nettoyer à la fermeture
+            window.addEventListener('beforeunload', function() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
                 }
             });
         });
-        
-        function dataURLtoBlob(dataURL) {
-            const byteString = atob(dataURL.split(',')[1]);
-            const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
-            const ab = new ArrayBuffer(byteString.length);
-            const ia = new Uint8Array(ab);
-            
-            for (let i = 0; i < byteString.length; i++) {
-                ia[i] = byteString.charCodeAt(i);
-            }
-            
-            return new Blob([ab], { type: mimeString });
-        }
-    });
     </script>
-
 </body>
 </html>

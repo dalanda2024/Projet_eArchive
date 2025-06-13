@@ -8,9 +8,16 @@ import os
 from django.contrib.auth import login
 from .forms import *
 from .models import *
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .forms import ScanDocumentForm
 import base64
-from django.utils.text import slugify
+from django.core.files.base import ContentFile
 import uuid
+import json
+from tempfile import NamedTemporaryFile
+import img2pdf
+from django.core.files import File
 
 
 
@@ -37,38 +44,61 @@ def redirect_after_login(request):
 # === AUTH ===
 def signup(request):
     if request.method == 'POST':
-        form = InscriptionForm(request.POST, request.FILES)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, "Inscription réussie!")
-            return redirect_after_login(request)
+        matricule = request.POST.get('matricule')
+        
+        # Vérifie si le matricule existe déjà
+        if Utilisateur.objects.filter(matricule=matricule).exists():
+            messages.error(request, "Ce matricule est déjà enregistré")
         else:
-            messages.error(request, "Veuillez corriger les erreurs ci-dessous.")
-    else:
-        form = InscriptionForm()
+            # Crée l'utilisateur avec username et matricule
+            user = Utilisateur(
+                username=request.POST.get('username'),
+                matricule=matricule,
+                email=request.POST.get('email'),
+                role=request.POST.get('role'),
+                first_name=request.POST.get('first_name', ''),
+                last_name=request.POST.get('last_name', '')
+            )
+            user.set_password(request.POST.get('password1'))
+            user.save()
+            
+            messages.success(request, "Inscription réussie! Vous pouvez maintenant vous connecter")
+            return redirect('signin')
     
-    return render(request, 'dashboard/signup.html', {'form': form})
+    return render(request, 'dashboard/signup.html')
+
 
 def signin(request):
     if request.user.is_authenticated:
         return redirect_after_login(request)
 
     if request.method == 'POST':
-        form = ConnexionForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
+        matricule = request.POST.get('matricule')
+        password = request.POST.get('password')
+        
+        try:
+            # Trouver l'utilisateur par matricule
+            user = Utilisateur.objects.get(matricule=matricule)
+            
+            # Authentifier avec le username (comme dans votre modèle actuel)
+            auth_user = authenticate(
+                request, 
+                username=user.username,  # Utilise le username pour l'authentification
+                password=password
+            )
+            
+            if auth_user is not None:
+                login(request, auth_user)
                 return redirect_after_login(request)
             else:
-                messages.error(request, "Identifiants incorrects")
-    else:
-        form = ConnexionForm()
+                messages.error(request, "Mot de passe incorrect")
+        except Utilisateur.DoesNotExist:
+            messages.error(request, "Matricule non reconnu")
     
-    return render(request, 'dashboard/signin.html', {'form': form})
+    return render(request, 'dashboard/signin.html')
+
+
+
 
 def logout_view(request):
     logout(request)
@@ -78,116 +108,245 @@ def logout_view(request):
 @login_required
 def scanner_document(request):
     if request.method == 'POST':
-        form = ScanDocumentForm(request.POST, request.FILES)
+        form = ScanTypeForm(request.POST, user=request.user)
         if form.is_valid():
-            scan = form.save(commit=False)
-            scan.utilisateur = request.user
-            scan.save()
+            type_document = form.cleaned_data['type_document']
             
-            # Traitement selon le type de document
-            if scan.type_document == 'projet' and est_etudiant(request.user):
-                return redirect('traiter_scan_projet', scan_id=scan.id)
-            elif scan.type_document == 'cours' and est_enseignant(request.user):
-                return redirect('traiter_scan_cours', scan_id=scan.id)
-            elif scan.type_document == 'document' and est_personnel(request.user):
-                return redirect('traiter_scan_document', scan_id=scan.id)
-            else:
-                messages.error(request, "Type de document incompatible avec votre profil")
-                return redirect('dashboard')
+            # Stockage des types selon le rôle
+            if request.user.role == 'etudiant':
+                type_projet = form.cleaned_data.get('type_projet')
+                request.session['scan_type_projet'] = type_projet
+            
+            elif request.user.role == 'enseignant':
+                type_cours = form.cleaned_data.get('type_cours')
+                request.session['scan_type_cours'] = type_cours
+            
+            elif request.user.role == 'personnel':
+                type_doc_admin = form.cleaned_data.get('type_document_admin')
+                request.session['scan_type_doc_admin'] = type_doc_admin
+            
+            request.session['scan_type_document'] = type_document
+            return render(request, 'dashboard/scanner.html', {
+                'type_document': type_document,
+                'user_role': request.user.role
+            })
     else:
-        form = ScanDocumentForm()
+        form = ScanTypeForm(user=request.user)
     
-    return render(request, 'dashboard/scanner.html', {'form': form})
+    return render(request, 'dashboard/choisir_type_scan.html', {'form': form})
+
 
 @login_required
-def traiter_scan_projet(request, scan_id):
-    scan = get_object_or_404(ScanDocument, id=scan_id, utilisateur=request.user, type_document='projet')
+def traiter_scan(request):
+    if request.method == 'POST' and request.session.get('scan_type_document'):
+        try:
+            scan_data = json.loads(request.POST.get('scan_data', '{}'))
+            pages = scan_data.get('pages', [])
+        except json.JSONDecodeError:
+            messages.error(request, "Données de scan invalides.")
+            return redirect('scanner_document')
+        
+        if not pages:
+            messages.error(request, "Aucune page scannée n'a été trouvée")
+            return redirect('scanner_document')
+        
+        scan = ScanDocument(
+            utilisateur=request.user,
+            type_document=request.session.get('scan_type_document')
+        )
+        scan.save()
+        
+        for i, page_data in enumerate(pages):
+            try:
+                format_part, imgstr = page_data.split(';base64,') 
+                ext = format_part.split('/')[-1]
+            except ValueError:
+                messages.error(request, "Format de page scannée incorrect.")
+                scan.delete()
+                return redirect('scanner_document')
+
+            filename = f"scan_{scan.id}_page_{i+1}.{ext}"
+            file_content = ContentFile(base64.b64decode(imgstr), name=filename)
+            
+            page = ScanPage(
+                scan=scan,
+                numero_page=i+1,
+                fichier_page=file_content
+            )
+            page.save()
+        
+        # Redirection selon rôle
+        if request.user.role == 'etudiant':
+            return redirect('completer_scan_projet', scan_id=scan.id)
+        elif request.user.role == 'enseignant':
+            return redirect('completer_scan_cours', scan_id=scan.id)
+        else:
+            return redirect('completer_scan_document', scan_id=scan.id)
+    
+    return redirect('scanner_document')
+
+
+@login_required
+def completer_scan_projet(request, scan_id):
+    scan = get_object_or_404(ScanDocument, id=scan_id, utilisateur=request.user)
+    type_projet = request.session.get('scan_type_projet', 'pfe')
     
     if request.method == 'POST':
-        form = ProjetEtudiantForm(request.POST, request.FILES)
+        form = ProjetEtudiantForm(request.POST)
         if form.is_valid():
             projet = form.save(commit=False)
             projet.auteur = request.user
+            projet.type_projet = type_projet
             projet.scan_provenance = scan
+            
+            # Fusionner les pages en PDF
+            fichier_pdf = combine_scan_pages(scan)
+            if fichier_pdf is None:
+                messages.error(request, "Erreur lors de la génération du fichier PDF.")
+                return redirect('completer_scan_projet', scan_id=scan.id)
+            
+            projet.fichier = fichier_pdf
             projet.save()
             
             scan.status = 'traite'
             scan.resultat_projet = projet
             scan.save()
             
+            request.session.pop('scan_type_document', None)
+            request.session.pop('scan_type_projet', None)
+            
             messages.success(request, "Projet créé à partir du scan avec succès!")
             return redirect('indexetudiant')
     else:
-        initial_data = {
-            'fichier': scan.fichier_scan,
-        }
-        form = ProjetEtudiantForm(initial=initial_data)
+        form = ProjetEtudiantForm(initial={
+            'titre': f"Projet scanné {scan.date_scan.strftime('%d/%m/%Y')}",
+            'type_projet': type_projet,
+            'description': "Document scanné et converti en format numérique"
+        })
     
-    return render(request, 'dashboard/traiter_scan.html', {
+    return render(request, 'dashboard/completer_scan.html', {
         'form': form,
         'scan': scan,
-        'type_doc': 'projet étudiant'
+        'type_doc': 'projet étudiant',
+        'pages': scan.pages.all().order_by('numero_page')
     })
 
+
 @login_required
-def traiter_scan_cours(request, scan_id):
-    scan = get_object_or_404(ScanDocument, id=scan_id, utilisateur=request.user, type_document='cours')
+def completer_scan_cours(request, scan_id):
+    scan = get_object_or_404(ScanDocument, id=scan_id, utilisateur=request.user)
+    type_cours = request.session.get('scan_type_cours', 'cours')
     
     if request.method == 'POST':
-        form = CoursEnseignantForm(request.POST, request.FILES)
+        form = CoursEnseignantForm(request.POST)
         if form.is_valid():
             cours = form.save(commit=False)
             cours.auteur = request.user
+            cours.type_cours = type_cours
             cours.scan_provenance = scan
+            
+            fichier_pdf = combine_scan_pages(scan)
+            if fichier_pdf is None:
+                messages.error(request, "Erreur lors de la génération du fichier PDF.")
+                return redirect('completer_scan_cours', scan_id=scan.id)
+            
+            cours.fichier = fichier_pdf
             cours.save()
             
             scan.status = 'traite'
             scan.resultat_cours = cours
             scan.save()
             
+            request.session.pop('scan_type_document', None)
+            request.session.pop('scan_type_cours', None)
+            
             messages.success(request, "Cours créé à partir du scan avec succès!")
             return redirect('indexenseignant')
     else:
-        initial_data = {
-            'fichier': scan.fichier_scan,
-        }
-        form = CoursEnseignantForm(initial=initial_data)
+        form = CoursEnseignantForm(initial={
+            'titre': f"Cours scanné {scan.date_scan.strftime('%d/%m/%Y')}",
+            'type_cours': type_cours,
+            'description': "Document scanné et converti en format numérique"
+        })
     
-    return render(request, 'dashboard/traiter_scan.html', {
+    return render(request, 'dashboard/completer_scan.html', {
         'form': form,
         'scan': scan,
-        'type_doc': 'cours enseignant'
+        'type_doc': 'cours enseignant',
+        'pages': scan.pages.all().order_by('numero_page')
     })
 
+
 @login_required
-def traiter_scan_document(request, scan_id):
-    scan = get_object_or_404(ScanDocument, id=scan_id, utilisateur=request.user, type_document='document')
+def completer_scan_document(request, scan_id):
+    scan = get_object_or_404(ScanDocument, id=scan_id, utilisateur=request.user)
+    type_doc_admin = request.session.get('scan_type_doc_admin', 'circulaire')
     
     if request.method == 'POST':
-        form = DocumentAdministratifForm(request.POST, request.FILES)
+        form = DocumentAdministratifForm(request.POST)
         if form.is_valid():
-            doc = form.save(commit=False)
-            doc.auteur = request.user
-            doc.scan_provenance = scan
-            doc.save()
+            document = form.save(commit=False)
+            document.auteur = request.user
+            document.type_document = type_doc_admin
+            document.scan_provenance = scan
+            
+            fichier_pdf = combine_scan_pages(scan)
+            if fichier_pdf is None:
+                messages.error(request, "Erreur lors de la génération du fichier PDF.")
+                return redirect('completer_scan_document', scan_id=scan.id)
+            
+            document.fichier = fichier_pdf
+            document.save()
             
             scan.status = 'traite'
-            scan.resultat_document = doc
+            scan.resultat_document = document
             scan.save()
             
-            messages.success(request, "Document créé à partir du scan avec succès!")
+            request.session.pop('scan_type_document', None)
+            request.session.pop('scan_type_doc_admin', None)
+            
+            messages.success(request, "Document administratif créé à partir du scan avec succès!")
             return redirect('indexpersonnel')
     else:
-        initial_data = {
-            'fichier': scan.fichier_scan,
-        }
-        form = DocumentAdministratifForm(initial=initial_data)
+        form = DocumentAdministratifForm(initial={
+            'titre': f"Document scanné {scan.date_scan.strftime('%d/%m/%Y')}",
+            'type_document': type_doc_admin,
+            'description': "Document scanné et converti en format numérique"
+        })
     
-    return render(request, 'dashboard/traiter_scan.html', {
+    return render(request, 'dashboard/completer_scan.html', {
         'form': form,
         'scan': scan,
-        'type_doc': 'document administratif'
+        'type_doc': 'document administratif',
+        'pages': scan.pages.all().order_by('numero_page')
     })
+
+
+def combine_scan_pages(scan):
+    pages = scan.pages.all().order_by('numero_page')
+    
+    if not pages.exists():
+        return None
+    
+    if pages.count() == 1:
+        # Si une seule page, on retourne directement le fichier image.
+        # ATTENTION : Vérifier que le champ accepte une image et non un pdf.
+        return pages.first().fichier_page
+    
+    try:
+        with NamedTemporaryFile(suffix='.pdf', delete=False) as tmp_pdf:
+            pdf_bytes = img2pdf.convert([page.fichier_page.path for page in pages])
+            tmp_pdf.write(pdf_bytes)
+            tmp_pdf.flush()
+            pdf_name = f"scan_complet_{scan.id}.pdf"
+            
+            with open(tmp_pdf.name, 'rb') as pdf_file:
+                django_file = File(pdf_file, name=pdf_name)
+                return django_file
+    except Exception as e:
+        print(f"Erreur lors de la fusion des pages : {e}")
+        return None
+
 
 
 # === ÉTUDIANT ===

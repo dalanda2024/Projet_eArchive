@@ -60,9 +60,9 @@
                 
                 <div class="navbar-nav w-100">
                     <a href="#" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
-                    
-                    <a href="{% url 'signin' %}" class="nav-link" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Se connecter</a>
-                    <a href="{% url 'index' %}" class="nav-link" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Accueil</a>
+                    <a href="{% url 'scanner_document' %}" class="nav-item nav-link"><i class="fas fa-camera me-2"></i>Scanner</a>
+                    <a href="{% url 'signin' %}" class="nav-link"><i class="far fa-file-alt me-2"></i>Se connecter</a>
+                    <a href="{% url 'index' %}" class="nav-link"><i class="far fa-file-alt me-2"></i>Accueil</a>
                 </div>
             </nav>
         </div>
@@ -84,7 +84,7 @@
             <!-- Stats Cards -->
             <div class="container-fluid pt-4 px-4">
                 <div class="row g-4">
-                    <div class="col-sm-6 col-xl-4">
+                    <div class="col-sm-6 col-xl-3">
                         <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
                             <i class="fa fa-file-alt fa-3x text-primary"></i>
                             <div class="ms-3">
@@ -93,7 +93,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-sm-6 col-xl-4">
+                    <div class="col-sm-6 col-xl-3">
                         <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
                             <i class="fa fa-download fa-3x text-primary"></i>
                             <div class="ms-3">
@@ -102,12 +102,21 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-sm-6 col-xl-4">
+                    <div class="col-sm-6 col-xl-3">
                         <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
                             <i class="fa fa-book fa-3x text-primary"></i>
                             <div class="ms-3">
                                 <p class="mb-2">Cours disponibles</p>
                                 <h6 class="mb-0">{{ cours_enseignants|length }}</h6>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
+                            <i class="fas fa-camera fa-3x text-primary"></i>
+                            <div class="ms-3">
+                                <p class="mb-2">Scans</p>
+                                <h6 class="mb-0">{{ stats.nb_scans }}</h6>
                             </div>
                         </div>
                     </div>
@@ -119,11 +128,35 @@
                 <div class="bg-light rounded p-4">
                     <div class="d-flex align-items-center justify-content-between mb-4">
                         <h2 class="mb-0">Ajouter un nouveau projet</h2>
+                        <a href="{% url 'scanner_document' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-camera me-2"></i>Scanner un document
+                        </a>
                     </div>
                     <form method="post" enctype="multipart/form-data" class="row g-3">
                         {% csrf_token %}
+                        <div class="col-md-6">
+                            <label for="id_titre" class="form-label">Titre du projet</label>
+                            {{ form.titre }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_type_projet" class="form-label">Type de projet</label>
+                            {{ form.type_projet }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_annee_academique" class="form-label">Année académique</label>
+                            {{ form.annee_academique }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_mots_cles" class="form-label">Mots-clés</label>
+                            {{ form.mots_cles }}
+                        </div>
                         <div class="col-12">
-                            {{ form.as_p }}
+                            <label for="id_description" class="form-label">Description</label>
+                            {{ form.description }}
+                        </div>
+                        <div class="col-12">
+                            <label for="id_fichier" class="form-label">Fichier du projet</label>
+                            {{ form.fichier }}
                         </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary">Ajouter le projet</button>
@@ -133,10 +166,8 @@
             </div>
 
             <!-- Projects Sections -->
-            <div class="container-fluid pt-4 px-4">
-                <div class="row g-4">
-                    <!-- My Projects -->
-                    <div class="col-sm-12 col-xl-6">
+            <!-- My Projects -->
+                    <div class="container-fluid pt-4 px-4">
                         <div class="bg-light rounded p-4 h-100">
                             <div class="d-flex align-items-center justify-content-between mb-4">
                                 <h2 class="mb-0">Mes projets archivés</h2>
@@ -155,6 +186,7 @@
                                     <thead>
                                         <tr>
                                             <th scope="col">Titre</th>
+                                            <th scope="col">Type</th>
                                             <th scope="col">Date</th>
                                             <th scope="col">Actions</th>
                                         </tr>
@@ -163,18 +195,27 @@
                                         {% for projet in projets %}
                                         <tr class="my-project-row">
                                             <td><strong>{{ projet.titre }}</strong></td>
+                                            <td><span class="badge bg-primary">{{ projet.get_type_projet_display }}</span></td>
                                             <td>{{ projet.date_ajout|date:"d/m/Y" }}</td>
                                             <td>
-                                                <a href="{{ projet.fichier.url }}" download="{{ projet.titre }}" class="btn btn-sm btn-outline-primary">Télécharger</a>
-                                                
+                                                {% if projet.fichier %}
+                                                    <a href="{{ projet.fichier.url }}" download="{{ projet.titre }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-download"></i> Télécharger
+                                                    </a>
+                                                {% elif projet.scan_provenance %}
+                                                    <a href="{{ projet.scan_provenance.fichier_scan.url }}" download="{{ projet.titre }}" class="btn btn-sm btn-outline-info">
+                                                        <i class="fas fa-file-alt"></i> Voir le scan
+                                                    </a>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark">Document non disponible</span>
+                                                {% endif %}
+
                                                 <a href="{% url 'modifier_projet' projet.id %}" class="btn btn-sm btn-outline-warning">Modifier</a>
                                                 <a href="{% url 'supprimer_projet' projet.id %}" class="btn btn-sm btn-outline-danger">Supprimer</a>
-                                                
                                             </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
-
                                 </table>
                             </div>
                             {% else %}
@@ -184,7 +225,7 @@
                     </div>
 
                     <!-- Other Students Projects -->
-                    <div class="col-sm-12 col-xl-6">
+                    <div class="container-fluid pt-4 px-4">
                         <div class="bg-light rounded p-4 h-100">
                             <div class="d-flex align-items-center justify-content-between mb-4">
                                 <h2 class="mb-0">Projets des autres étudiants</h2>
@@ -203,6 +244,7 @@
                                     <thead>
                                         <tr>
                                             <th scope="col">Titre</th>
+                                            <th scope="col">Type</th>
                                             <th scope="col">Auteur</th>
                                             <th scope="col">Action</th>
                                         </tr>
@@ -211,6 +253,7 @@
                                         {% for projet in projets_autres %}
                                         <tr class="other-project-row">
                                             <td><strong>{{ projet.titre }}</strong></td>
+                                            <td><span class="badge bg-primary">{{ projet.get_type_projet_display }}</span></td>
                                             <td>{{ projet.auteur.username }}</td>
                                             <td>
                                                 <a href="{{ projet.fichier.url }}" download="{{ projet.titre }}" class="btn btn-sm btn-outline-primary">Télécharger</a>
@@ -225,8 +268,6 @@
                             {% endif %}
                         </div>
                     </div>
-                </div>
-            </div>
 
             <!-- Teachers Courses -->
             <div class="container-fluid pt-4 px-4">
@@ -248,6 +289,7 @@
                             <thead>
                                 <tr>
                                     <th scope="col">Titre</th>
+                                    <th scope="col">Type</th>
                                     <th scope="col">Auteur</th>
                                     <th scope="col">Action</th>
                                 </tr>
@@ -256,6 +298,7 @@
                                 {% for cours in cours_enseignants %}
                                 <tr class="course-row">
                                     <td><strong>{{ cours.titre }}</strong></td>
+                                    <td><span class="badge bg-success">{{ cours.get_type_cours_display }}</span></td>
                                     <td>{{ cours.auteur.username }}</td>
                                     <td>
                                         <a href="{{ cours.fichier.url }}" download="{{ cours.titre }}" class="btn btn-sm btn-outline-primary">Télécharger</a>
@@ -267,6 +310,57 @@
                     </div>
                     {% else %}
                     <div class="alert alert-info">Aucun cours archivé disponible.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Scans Section -->
+            <div class="container-fluid pt-4 px-4">
+                <div class="bg-light rounded p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h2 class="mb-0">Mes scans</h2>
+                        <a href="{% url 'scanner_document' %}" class="btn btn-primary">
+                            <i class="fas fa-camera me-2"></i>Nouveau scan
+                        </a>
+                    </div>
+                    {% if scans %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Fichier</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for scan in scans %}
+                                <tr>
+                                    
+                                    <td>{{ scan.get_type_document_display }}</td>
+                                    <td>{{ scan.date_scan|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if scan.status == 'traite' %}success{% else %}warning{% endif %}">
+                                            {{ scan.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if scan.status == 'en_attente' %}
+                                        <a href="{% url 'completer_scan_projet' scan.id %}" class="btn btn-sm btn-info">
+                                            Compléter
+                                        </a>
+                                        {% endif %}
+                                        
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">Vous n'avez pas encore effectué de scan.</div>
                     {% endif %}
                 </div>
             </div>
@@ -287,7 +381,9 @@
                 </div>
                 <div class="mb-4">
                     <p><strong>Email :</strong> {{ user.email }}</p>
-                    <p><strong>Statut :</strong> Actif</p>
+                    <p><strong>Département :</strong> {{ user.department }}</p>
+                    <p><strong>Projets :</strong> {{ stats.nb_projets }}</p>
+                    <p><strong>Scans :</strong> {{ stats.nb_scans }}</p>
                 </div>
                 <div class="d-flex justify-content-between">
                     <a href="#" class="btn btn-sm btn-outline-primary">Modifier profil</a>
@@ -298,6 +394,7 @@
 
         <!-- Back to Top -->
         <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+        
     </div>
 
     <!-- JavaScript for Profile Popup and Search -->
